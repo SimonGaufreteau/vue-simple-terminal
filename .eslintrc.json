@@ -1,0 +1,16 @@
+{
+    "env": {
+        "browser": true,
+        "commonjs": true,
+        "node": true
+    },
+    "extends": [
+        "plugin:vue/recommended"
+    ],
+    "plugins": [
+        "vue"
+    ],
+    "rules": {
+        "no-console": "off"
+    }
+}
