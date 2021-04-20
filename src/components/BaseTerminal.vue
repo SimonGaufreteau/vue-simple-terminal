@@ -3,7 +3,7 @@
         <div class="terminal-header text-center bg-gray-700">
             Terminal
         </div>
-        <div class="terminal-body text-left text-sm bg-black_primary">
+        <div class="terminal-body text-left text-sm bg-black_primary whitespace-pre">
             <div class="" v-for="(message, index) in messageList" :key="index">
                 <div class="flex" v-if="!message.onlyOutput">
                     <div class="text-green-500 font-bold ">>&nbsp</div>
@@ -17,7 +17,14 @@
                 <div class="text-blue-300 ">{{currentDirFormatted}} </div>
                 <div class="text-green-500 font-bold">&nbsp>&nbsp</div>
                 <div class=" break-words overflow-hidden whitespace-pre" v-html="inputCommand"></div>
-                <input v-model="inputCommand" autofocus="true" ref="terminalInput" class="terminal-input bg-black_primary overflow-hidden  " @keyup="handleKeyPress($event)" placeholder=""/>
+                <input 
+                v-model="inputCommand" 
+                autofocus="true" 
+                ref="terminalInput" 
+                class="terminal-input 
+                bg-black_primary overflow-hidden" 
+                @keyup="handleKeyPress($event)" 
+                placeholder=""/>
                 <div class="terminal_cursor">&nbsp</div>
             </div>
         </div>
@@ -163,11 +170,24 @@ export default {
             }
         },
 
+        showTree(node = this.currentDir, level = 0) {
+            if (node == null) return;
+            const hasDescendants = node.descendants.length > 0;
+            this.pushResultToMessageList([" ".repeat(level * 4) + node.value + (hasDescendants ? ": {" : "")]);
+            if (hasDescendants) {
+                for (const desc of node.descendants) {
+                    this.showTree(desc, level + 1);
+                }
+                this.pushResultToMessageList([" ".repeat(level * 4) + "}"]);
+            }
+        },
+
         handleKeyPress(e) {
             if (e.keyCode != 13) {
                 return;
             }
             var res = [];
+            var pushAfter = true;
 
             switch (this.inputCommand.split(" ")[0]) {
             case "help":
@@ -181,6 +201,12 @@ export default {
                 break;
             case "tree":
                 //TODO : show tree
+                var save_dir = this.currentDir;
+                pushAfter = false;
+                this.pushCommandToMessageList(this.inputCommand, "");
+                this.changeDir();
+                this.showTree();
+                this.currentDir = save_dir;
                 break;
             case "":
                 break;
@@ -190,11 +216,9 @@ export default {
             }
             if (this.inputCommand == "clear") {
                 this.clearConsole();
-                this.inputCommand = "";
-                return;
+                pushAfter = false;
             }
-            console.log(res);
-            this.pushCommandToMessageList(this.inputCommand, res);
+            if (pushAfter) this.pushCommandToMessageList(this.inputCommand, res);
             this.inputCommand = "";
         },
         switchFocus() {
