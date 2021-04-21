@@ -7,7 +7,7 @@
         <div class="terminal-body" ref="terminalBody">
             <div class="py-0.5" v-for="(message, index) in messageList" :key="index">
                 <div class="flex" v-if="!message.onlyOutput">
-                    <div class="text-green-600 font-bold ">{{enterChar}}&nbsp</div>
+                    <div class="enter-char-format">{{enterChar}}&nbsp</div>
                     <div class="overflow-hidden break-words"> {{message.command}} </div>
                 </div>
                 <div v-for="(item, index) in message.result" :key="index" class="break-words"> 
@@ -16,7 +16,7 @@
             </div>
             <div class="terminal-last-line flex">
                 <div class="text-blue-500 ">{{currentDirFormatted}} </div>
-                <div class="text-green-600 font-bold">&nbsp{{enterChar}}&nbsp</div>
+                <div class="enter-char-format">&nbsp{{enterChar}}&nbsp</div>
                 <div class=" break-words overflow-hidden whitespace-pre">{{inputCommand}}</div>
                 <input 
                 v-model="inputCommand" 
@@ -205,7 +205,6 @@ export default {
             var switchCommand = true;
 
             var split_command = this.inputCommand.split(" ");
-            console.log(split_command);
             if (split_command.length > 0 && (split_command[1] == "--help" || split_command[1] == "-h")) {
                 res.push(this.showCommandHelp(split_command[0]));
                 switchCommand = false;
@@ -222,7 +221,6 @@ export default {
                     res.push(this.changeDir());
                     break;
                 case "tree":
-                    //TODO : show tree
                     var save_dir = this.currentDir;
                     pushAfter = false;
                     this.pushCommandToMessageList(this.inputCommand, "");
@@ -232,6 +230,9 @@ export default {
                     break;
                 case "ls":
                     res.push(this.showLS());
+                    break;
+                case "open":
+                    // TODO : ask to open the page
                     break;
                 case "":
                     break;
@@ -304,5 +305,9 @@ export default {
 .vue-terminal {
     height: 600px;
     @apply font-display text-white bg-black_primary overflow-hidden  w-2/3 h-full;
+}
+
+.enter-char-format {
+    @apply text-green-600 font-bold;
 }
 </style>
