@@ -1,12 +1,13 @@
 <template lang="en">
-    <div class="vue-terminal font-display text-white  w-2/3" @click="switchFocus">
+    <div class="vue-terminal " 
+    @click="switchFocus">
         <div class="terminal-header text-center bg-gray-700">
             Terminal
         </div>
-        <div class="terminal-body text-left text-sm bg-black_primary whitespace-pre">
-            <div class="" v-for="(message, index) in messageList" :key="index">
+        <div class="terminal-body" ref="terminalBody">
+            <div class="py-0.5" v-for="(message, index) in messageList" :key="index">
                 <div class="flex" v-if="!message.onlyOutput">
-                    <div class="text-green-500 font-bold ">>&nbsp</div>
+                    <div class="text-green-600 font-bold ">{{enterChar}}&nbsp</div>
                     <div class="overflow-hidden break-words"> {{message.command}} </div>
                 </div>
                 <div v-for="(item, index) in message.result" :key="index" class="break-words"> 
@@ -14,9 +15,9 @@
                 </div>
             </div>
             <div class="terminal-last-line flex">
-                <div class="text-blue-300 ">{{currentDirFormatted}} </div>
-                <div class="text-green-500 font-bold">&nbsp>&nbsp</div>
-                <div class=" break-words overflow-hidden whitespace-pre" v-html="inputCommand"></div>
+                <div class="text-blue-500 ">{{currentDirFormatted}} </div>
+                <div class="text-green-600 font-bold">&nbsp{{enterChar}}&nbsp</div>
+                <div class=" break-words overflow-hidden whitespace-pre">{{inputCommand}}</div>
                 <input 
                 v-model="inputCommand" 
                 autofocus="true" 
@@ -25,7 +26,7 @@
                 bg-black_primary overflow-hidden" 
                 @keyup="handleKeyPress($event)" 
                 placeholder=""/>
-                <div class="terminal_cursor">&nbsp</div>
+                <div class="terminal_cursor h-2 self-end">&nbsp</div>
             </div>
         </div>
 
@@ -33,7 +34,7 @@
     
 </template>
 <script>
-import { TreeNode } from "../utils/tree.js";
+import { TreeNode } from "@/utils/tree.js";
 
 export default {
     name: "BaseTerminal",
@@ -42,14 +43,14 @@ export default {
             messageList: [],
             currentDir: null,
             inputCommand: "",
+            enterChar: "❯",
             commandHistory: [],
             availableCommands: {
-                help: "Shows this tooltip",
+                help: "Shows help for all commands",
                 ls: "Lists all files present in the current directory",
                 tree: "Shows the subdirectories as a tree view",
-                "cat <filename>": "Print the content of <filename>",
-                "cd <dir>": "Move to <dir>",
-                "open <page>": "Opens the <page>",
+                cd: "Move to <dir>",
+                open: "Opens the <page>",
                 clear: "Clears the console"
             },
             treeDir: null
@@ -64,14 +65,12 @@ export default {
                 final_str = node.value + "/" + final_str;
                 node = node.parent;
             }
-            //console.log(final_str);
-
             return final_str;
         }
     },
     mounted() {
         const help_res = this.getHelp();
-        this.pushResultToMessageList(help_res);
+        this.pushResultToMessageList([help_res]);
 
         // Constructing Dir tree
         var dir0 = new TreeNode("~", true);
@@ -93,10 +92,6 @@ export default {
         dir0.pushDescendant(dir1);
         this.treeDir = dir0;
         this.currentDir = dir1;
-        console.log("Current dir");
-        console.log(this.currentDir);
-
-        this.treeDir.printTree();
     },
     methods: {
         pushCommandToMessageList(input, output) {
@@ -114,9 +109,9 @@ export default {
             });
         },
         getHelp() {
-            var tempResult = ["List of available commands : "];
+            var tempResult = "List of available commands : ";
             for (const prop in this.availableCommands) {
-                tempResult.push("   - " + prop + " : " + this.availableCommands[prop]);
+                tempResult += "\n   - " + prop + " : " + this.availableCommands[prop];
             }
             return tempResult;
         },
@@ -124,12 +119,12 @@ export default {
             this.messageList = [];
         },
         changeDir() {
-            const errorMessage = ["cd : Invalid directory."];
+            var errorMessage = "cd : Invalid directory.";
             var input = this.inputCommand.split(" ");
             if (input.length == 1) {
                 return errorMessage;
             }
-            var target = input[1].split("/");
+            var target = input[1].replace(/[\<\>]/g, "").split("/");
             var i = 0;
             while (i < target.length) {
                 switch (target[i]) {
@@ -148,10 +143,8 @@ export default {
                     break;
 
                 default:
-                    console.log(this.currentDir.descendants);
                     var index = -1;
                     for (let x = 0; x < this.currentDir.descendants.length; x++) {
-                        console.log(this.currentDir.descendants[x].value + " / " + target[i]);
                         if (this.currentDir.descendants[x].value == target[i]) {
                             index = x;
                             break;
@@ -161,7 +154,7 @@ export default {
                     if (index >= 0 && this.currentDir.descendants[index].isDir) {
                         this.currentDir = this.currentDir.descendants[index];
                     } else {
-                        errorMessage[0] += " (" + target[i] + ")";
+                        errorMessage += " (" + target[i] + ")";
                         return errorMessage;
                     }
                     break;
@@ -182,37 +175,70 @@ export default {
             }
         },
 
+        showLS() {
+            var final_str = "";
+            if (this.currentDir.descendants.length > 0) {
+                for (const desc of this.currentDir.descendants) {
+                    var temp_value = desc.value;
+                    if (desc.isDir) {
+                        temp_value = "<" + temp_value + ">";
+                    }
+                    final_str += temp_value + "  ";
+                }
+            }
+            return final_str;
+        },
+
+        showCommandHelp(cmd) {
+            if (cmd in this.availableCommands) {
+                return this.availableCommands[cmd];
+            }
+            return "Invalid command : " + cmd + ".";
+        },
+
         handleKeyPress(e) {
             if (e.keyCode != 13) {
                 return;
             }
             var res = [];
             var pushAfter = true;
+            var switchCommand = true;
 
-            switch (this.inputCommand.split(" ")[0]) {
-            case "help":
-                res = this.getHelp();
-                break;
-            case "clear":
-                this.clearConsole();
-                break;
-            case "cd":
-                res = this.changeDir();
-                break;
-            case "tree":
-                //TODO : show tree
-                var save_dir = this.currentDir;
-                pushAfter = false;
-                this.pushCommandToMessageList(this.inputCommand, "");
-                this.changeDir();
-                this.showTree();
-                this.currentDir = save_dir;
-                break;
-            case "":
-                break;
-            default:
-                res.push("command not found : " + this.inputCommand);
-                break;
+            var split_command = this.inputCommand.split(" ");
+            console.log(split_command);
+            if (split_command.length > 0 && (split_command[1] == "--help" || split_command[1] == "-h")) {
+                res.push(this.showCommandHelp(split_command[0]));
+                switchCommand = false;
+            }
+            if (switchCommand) {
+                switch (this.inputCommand.split(" ")[0]) {
+                case "help":
+                    res.push(this.getHelp());
+                    break;
+                case "clear":
+                    this.clearConsole();
+                    break;
+                case "cd":
+                    res.push(this.changeDir());
+                    break;
+                case "tree":
+                    //TODO : show tree
+                    var save_dir = this.currentDir;
+                    pushAfter = false;
+                    this.pushCommandToMessageList(this.inputCommand, "");
+                    this.changeDir();
+                    this.showTree();
+                    this.currentDir = save_dir;
+                    break;
+                case "ls":
+                    res.push(this.showLS());
+                    break;
+                case "":
+                    break;
+                default:
+                    res.push("command not found : " + this.inputCommand);
+                    break;
+                } // End of switch
             }
             if (this.inputCommand == "clear") {
                 this.clearConsole();
@@ -220,9 +246,15 @@ export default {
             }
             if (pushAfter) this.pushCommandToMessageList(this.inputCommand, res);
             this.inputCommand = "";
+            this.scrollDown();
         },
         switchFocus() {
             this.$refs.terminalInput.focus();
+        },
+        scrollDown() {
+            this.$nextTick(() => {
+                this.$refs.terminalBody.scrollTop = this.$refs.terminalInput.offsetTop;
+            });
         }
     }
 };
@@ -262,5 +294,15 @@ export default {
 
 .terminal-input-show {
     word-wrap: break-word;
+}
+
+.terminal-body {
+    height: 500px;
+    @apply text-left px-0.5 text-base text-gray-200 bg-black_primary whitespace-pre overflow-y-auto;
+}
+
+.vue-terminal {
+    height: 600px;
+    @apply font-display text-white bg-black_primary overflow-hidden  w-2/3 h-full;
 }
 </style>

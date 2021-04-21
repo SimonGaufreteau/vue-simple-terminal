@@ -1,7 +1,7 @@
 <template>
-    <div class="flex flex-col items-center bg-gray-200">
-        <BaseTerminal />
-    </div>
+  <div class="flex flex-col items-center">
+    <BaseTerminal />
+  </div>
 </template>
 
 <script>
@@ -10,8 +10,8 @@ import BaseTerminal from "./components/BaseTerminal.vue";
 export default {
     name: "App",
     components: {
-        BaseTerminal,
-    },
+        BaseTerminal
+    }
 };
 </script>
 
