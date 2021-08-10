@@ -34,7 +34,7 @@
     
 </template>
 <script>
-import { TreeNode } from "@/utils/tree.js";
+import { TreeNode } from "../utils/tree.js";
 
 export default {
     name: "BaseTerminal",
