@@ -57,7 +57,8 @@ export default {
                 ls: 'Lists all files present in the current directory',
                 tree: 'Shows the subdirectories as a tree view',
                 cd: 'Move to <dir>',
-                open: 'Opens the <page>',
+                open: 'Opens the <page>\n(I recommend using the number preceding the page name when possible\n'
+                + 'but you can also use the full page name)',
                 clear: 'Clears the console',
             },
             treeDir: null,
@@ -75,7 +76,7 @@ export default {
             return final_str;
         },
     },
-    mounted() {
+    async mounted() {
         const help_res = this.getHelp();
         this.pushResultToMessageList([help_res]);
 
@@ -87,10 +88,24 @@ export default {
         const doc1 = new TreeNode({ name: 'CV.html', url: '/About' });
         const doc2 = new TreeNode({ name: 'Home.html', url: '/Home' });
         const doc3 = new TreeNode({ name: 'About.html', url: '/Home' });
-        const doc4 = new TreeNode({ name: 'discord-bot.py', url: '/Article/88' });
+        this.pagesList = [];
+
+        await this.fetchData();
+
+        let counter = 0;
+        this.pagesList.forEach((page) => {
+            page.fakeID = counter;
+            this.pagesList.push(page);
+            const node = new TreeNode({ id: counter, name: page.title, url: page.url });
+            counter += 1;
+            dir2.pushDescendant(node);
+        });
+
+        /* const doc4 = new TreeNode({ name: 'discord-bot.py', url: '/Article/88' });
         const doc5 = new TreeNode({ name: 'vue.js', url: '/Home' });
         dir2.pushDescendant(doc4);
         dir2.pushDescendant(doc5);
+        */
 
         dir1.pushDescendant(dir2);
         dir1.pushDescendant(doc1);
@@ -101,6 +116,23 @@ export default {
         this.currentDir = dir1;
     },
     methods: {
+        async fetchData() {
+            try {
+                const response = await fetch('http://localhost:8081/get_light_posts');
+                const data = await response.json();
+                this.pagesList = data.reduce((memo, e) => {
+                    const id = e.url.split('?p=')[1];
+                    if (id != null) {
+                        e.url = `/Article/${id}`;
+                        memo.push(e);
+                    }
+                    return memo;
+                }, []);
+            } catch (error) {
+                console.log(error);
+            }
+        },
+
         pushCommandToMessageList(input, output) {
             this.messageList.push({
                 onlyOutput: false,
@@ -173,8 +205,10 @@ export default {
         showTree(node = this.currentDir, level = 0) {
             if (node == null) return;
             const hasDescendants = node.descendants.length > 0;
+            const dirStr = node.value.id != null ? (`${node.value.id} / `) : '';
+            const resStr = `${' '.repeat(level * 4)}${dirStr}${node.value.name}${hasDescendants ? ': {' : ''}`;
             this.pushResultToMessageList([
-                ' '.repeat(level * 4) + node.value.name + (hasDescendants ? ': {' : ''),
+                resStr,
             ]);
             if (hasDescendants) {
                 for (const desc of node.descendants) {
@@ -191,8 +225,10 @@ export default {
                     let temp_value = desc.value.name;
                     if (desc.isDir) {
                         temp_value = `<${temp_value}>`;
+                    } else if (desc.value.id != null) {
+                        temp_value = `${desc.value.id} / ${temp_value}`;
                     }
-                    final_str += `${temp_value}  `;
+                    final_str += `${temp_value} \n`;
                 }
             }
             return final_str;
@@ -204,9 +240,13 @@ export default {
             if (input.length === 1) {
                 return errorMessage;
             }
+            const [head, ...rest] = input;
+            const completeInput = rest.join(' ');
             const foundpage = this.pagesList.filter((page) => {
-                const pageNameInput = page.name.split('.');
-                return (pageNameInput.length > 0 && input[1] === pageNameInput[0]) || input[1] === page.name;
+                const pageNameInput = page.title.split('.');
+                return (pageNameInput.length > 0 && completeInput === pageNameInput[0])
+                || completeInput === page.name
+                || completeInput == page.fakeID;
             });
             if (foundpage.length >= 1) {
                 this.$router.push(foundpage[0].url);
