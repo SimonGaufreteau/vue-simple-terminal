@@ -118,16 +118,12 @@ export default {
     methods: {
         async fetchData() {
             try {
-                const response = await fetch('http://localhost:8081/get_light_posts');
-                const data = await response.json();
-                this.pagesList = data.reduce((memo, e) => {
-                    const id = e.url.split('?p=')[1];
-                    if (id != null) {
-                        e.url = `/Article/${id}`;
-                        memo.push(e);
-                    }
-                    return memo;
-                }, []);
+                if (this.$store.state.articleList == null) {
+                    // Update articles if necessary
+                    await this.$store.dispatch('fetchArticleList');
+                }
+                this.pagesList = this.$store.state.articleList.slice();
+                // console.log(this.pagesList);
             } catch (error) {
                 console.log(error);
             }
