@@ -100,6 +100,10 @@ export default {
             counter += 1;
             dir2.pushDescendant(node);
         });
+        this.pagesList.push({ title: 'CV.html', url: '/About' });
+        this.pagesList.push({ title: 'Home.html', url: '/Home' });
+        this.pagesList.push({ title: 'About.html', url: '/About' });
+        // console.log(this.pagesList);
 
         /* const doc4 = new TreeNode({ name: 'discord-bot.py', url: '/Article/88' });
         const doc5 = new TreeNode({ name: 'vue.js', url: '/Home' });
@@ -238,11 +242,12 @@ export default {
             }
             const [head, ...rest] = input;
             const completeInput = rest.join(' ');
+            // console.log(completeInput);
             const foundpage = this.pagesList.filter((page) => {
                 const pageNameInput = page.title.split('.');
                 return (pageNameInput.length > 0 && completeInput === pageNameInput[0])
-                || completeInput === page.name
-                || completeInput == page.fakeID;
+                || completeInput === page.title
+                || completeInput === page.fakeID;
             });
             if (foundpage.length >= 1) {
                 this.$router.push(foundpage[0].url);
