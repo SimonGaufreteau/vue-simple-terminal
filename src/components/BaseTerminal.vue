@@ -85,9 +85,9 @@ export default {
         const dir1 = new TreeNode({ name: 'simon-gaufreteau' }, true);
 
         const dir2 = new TreeNode({ name: 'Projects' }, true);
-        const doc1 = new TreeNode({ name: 'CV.html', url: '/About' });
+        const doc1 = new TreeNode({ name: 'CV.html', url: '/CV' });
         const doc2 = new TreeNode({ name: 'Home.html', url: '/Home' });
-        const doc3 = new TreeNode({ name: 'About.html', url: '/Home' });
+        const doc3 = new TreeNode({ name: 'About.html', url: '/About' });
         this.pagesList = [];
 
         await this.fetchData();
