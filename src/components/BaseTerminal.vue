@@ -100,7 +100,7 @@ export default {
             counter += 1;
             dir2.pushDescendant(node);
         });
-        this.pagesList.push({ title: 'CV.html', url: '/About' });
+        this.pagesList.push({ title: 'CV.html', url: '/CV' });
         this.pagesList.push({ title: 'Home.html', url: '/Home' });
         this.pagesList.push({ title: 'About.html', url: '/About' });
         // console.log(this.pagesList);
@@ -344,11 +344,16 @@ export default {
   }
 }
 
-.terminal_cursor {
+.terminal_cursor  {
   margin: 0;
   background-color: white;
+  display: none;
   animation: blink 1s step-end infinite;
   -webkit-animation: blink 1s step-end infinite;
+}
+
+.terminal-input:focus ~ .terminal_cursor{
+    display: block;
 }
 
 .terminal-input {
