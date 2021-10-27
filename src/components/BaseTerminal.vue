@@ -247,7 +247,7 @@ export default {
                 const pageNameInput = page.title.split('.');
                 return (pageNameInput.length > 0 && completeInput === pageNameInput[0])
                 || completeInput === page.title
-                || completeInput === page.fakeID;
+                || completeInput == page.fakeID;
             });
             if (foundpage.length >= 1) {
                 this.$router.push(foundpage[0].url);
